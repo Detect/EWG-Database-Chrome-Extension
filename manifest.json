@@ -1,0 +1,20 @@
+{
+  "name": "Skin Deep",
+  "version": "0.1",
+  "description": "Chrome extension for displaying product prices on EWG's Skin Deep Cosmetics Database http://www.ewg.org/skindeep/",
+  "browser_action": {
+    "default_icon": "e.ico"
+  },
+  "permissions": [
+    "http://*/",
+    "https://*/",
+	"tabs"
+  ],
+  "background_page" : "background.html",
+  "content_scripts": [
+    {
+      "matches": ["http://www.ewg.org/skindeep/*"],
+      "js": ["jquery.js", "global.js"]
+    }
+  ]  
+}

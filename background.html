@@ -1,0 +1,83 @@
+<html>
+<body>
+<script src="jquery.js"></script>
+<script>
+
+function onRequest(request, sender, callback) {
+        if (request.action == 'searchPrice') {
+          search(request.text, request.pId, callback);
+        }
+}
+
+chrome.extension.onRequest.addListener(onRequest);
+	  
+function search(text, pId, cb) {
+	//console.log("search", arguments);
+	var a = {};
+	a.text = text;
+	a.url = "http://www.google.com/search?btnI=I'm Feeling Lucky&q=" + text
+	a.pId = pId;
+	a.cb = cb;
+	getUrl("http://www.google.com/search", {
+        /*btnI: "I'm Feeling Lucky",*/
+		q: text
+		}, bind(a, getPrice)
+	);
+}
+
+function getUrl(url, data, cb)
+{
+	$.get(url, data, cb);
+}
+
+function bind(scope, fn) {
+	return function() {
+		fn.apply(scope, arguments);
+	};
+}
+
+function getPrice(data) {
+	if(data.indexOf(" - Google Search") !== -1)
+	{
+		var a = {};
+		var urls = $(".l", data);
+		urls = urls.filter(function() {
+			var newa = $("<a>").attr("href", $(this).attr("href"));
+			return newa[0].pathname.length > 1;
+		});
+		a.url = urls.first().attr('href');
+		a.text = this.text;
+		a.pId = this.pId;
+		a.cb = this.cb;
+		getUrl(a.url, {}, bind(a, getPrice));
+	}
+	else
+	{
+		data = data.substring(data.search(/<.*body/i));
+		var res = data.match(/^(?!\u00a2) \p{Sc}? (?!0,?\d) (\d{1,3} (\,\d{3})* |(\d+))  (\.\d{2})?$/g);
+		if(res && res.length) {
+			listPrice(res, this.text, this.url, this.pId, this.cb);
+		} else {
+			res = data.match(/\d+\.\d{2}/g);
+			if(res && res.length) {
+				listPrice(res, this.text, this.url, this.pId, this.cb);
+			}
+		}
+	}
+}
+
+function listPrice(res, text, url, pId, cb) {
+	var arr = $.grep(res, function(n, i){
+		n = n.replace(/[^0-9\.]+/g,"");
+		return (parseFloat(n) > 0 && parseFloat(n) < 200);
+	});
+	if(arr.length)
+	{
+		//console.log("Possible prices for " + text, arr, url, pId, cb);
+		var data = {pId: pId, url: url, price: arr[0]};
+		cb(data);
+	}
+}
+</script>
+</body>
+</html>
